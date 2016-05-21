@@ -4,7 +4,6 @@
 # Copyright (c) 2016 Raymon de Looff <raydelooff@gmail.com>
 # This extension is open-source licensed under the MIT license.
 
-from pusher import Pusher
 import Queue
 import socket
 import sys
@@ -14,6 +13,7 @@ import weewx
 import weewx.restx
 import weeutil.weeutil
 
+from pusher import Pusher
 from weewx.restx import StdRESTful, RESTThread
 
 class StdPusher(StdRESTful):
@@ -22,10 +22,10 @@ class StdPusher(StdRESTful):
     """
 
     def __init__(self, engine, config_dict):
-        super(WeeWXPusher, self).__init__(engine, config_dict)
+        super(StdPusher, self).__init__(engine, config_dict)
 
         _pusher_dict = weewx.restx.check_enable(config_dict, 'Pusher')
-        if _pusher_dict is None
+        if _pusher_dict is None:
             return
 
         # This extension needs an App ID, key, secret, channel and event name
@@ -69,7 +69,7 @@ class PusherThread(RESTThread):
 
     def __init__(self, queue,
                  manager_dict,
-                 app_id=DEFAULT_HOST,
+                 app_id=DEFAULT_APP_ID,
                  key=DEFAULT_KEY,
                  secret=DEFAULT_SECRET,
                  channel=DEFAULT_CHANNEL,
