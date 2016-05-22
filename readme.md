@@ -18,7 +18,7 @@ This extension can be installed very easily using the WeeWX installer.
     wee_extension --install=master.tar.gz
     ```
 
-3. Edit your `weewx.conf` file and add the Pusher configuration to the StdRestful section. The installer automatically adds the Pusher configuration to your `weewx.conf`. If you prefer to have some comments in the configuration, copy and paste the following configuration to your `weewx.conf` file:
+3. Edit your `weewx.conf` file and add the Pusher configuration to the StdRestful section. The installer automatically adds the Pusher configuration to your configuration file. If you prefer to have some comments in the configuration, copy and paste the following configuration into your `weewx.conf` file:
     ```ini
     [StdRestful]
         ...
