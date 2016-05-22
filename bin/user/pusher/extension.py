@@ -4,6 +4,8 @@
 # Copyright (c) 2016 Raymon de Looff <raydelooff@gmail.com>
 # This extension is open-source licensed under the MIT license.
 
+__version__ = '1.1.0'
+
 import Queue
 import sys
 import syslog
@@ -43,7 +45,7 @@ class StdPusher(StdRESTful):
                                            **_pusher_dict)
         except ValueError, e:
             syslog.syslog(syslog.LOG_ERR,
-                          "Pusher: Invalid values set in configuration.")
+                          "pusher: Invalid values set in configuration.")
             syslog.syslog(syslog.LOG_ERR,
                               "*****   Error: %s" % e)
             return
@@ -52,7 +54,9 @@ class StdPusher(StdRESTful):
         self.bind(weewx.NEW_LOOP_PACKET, self.new_loop_packet)
 
         syslog.syslog(syslog.LOG_INFO,
-                  "Pusher: LOOP packets will be pushed to channel '%s'." % _pusher_dict['channel'])
+                  "pusher: Starting Pusher version %s." % __version__)
+        syslog.syslog(syslog.LOG_INFO,
+                  "pusher: LOOP packets will be pushed to channel '%s'." % _pusher_dict['channel'])
 
     def new_loop_packet(self, event):
         self.loop_queue.put(event.packet)
@@ -147,7 +151,7 @@ class PusherThread(RESTThread):
                 # Get the full record by querying the database ...
                 record = self.get_record(record, dbmanager)
                 syslog.syslog(syslog.LOG_DEBUG,
-                              "Pusher: Observation '%s' not found in record. Filling record from database."
+                              "pusher: Observation '%s' not found in record. Filling record from database."
                               % _observation)
                 break
 
@@ -170,12 +174,12 @@ class PusherThread(RESTThread):
             except pusher.errors.PusherBadRequest, e:
                 syslog.syslog(
                         syslog.LOG_DEBUG,
-                        "Pusher: Attempt %d to push to channel '%s'. Error: %s"
+                        "pusher: Attempt %d to push to channel '%s'. Error: %s"
                         % (_count + 1, self.channel, e))
 
         # If we get here, the loop terminated normally, meaning we failed
         # all tries
-        raise weewx.restx.FailedPost("Tried %d times to post to channel '%s'." %
+        raise weewx.restx.FailedPost("pusher: Tried %d times to post to channel '%s'." %
                          (self.max_tries, self.channel))
 
 
