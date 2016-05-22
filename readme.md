@@ -2,10 +2,10 @@
 This [WeeWX](https://github.com/weewx/weewx) extension allows you to send your realtime weather data to Pusher. You can use Pusher to send realtime weather condition updates to your web application or app. Find more information about Pusher on [their website](https://pusher.com).
 
 ## Requirements
-**This extension requires the Pusher library for Python.** The installation guide of the Pusher library can be found on [the official GitHub repository](https://github.com/pusher/pusher-http-python#installation). If you're running WeeWX on Raspbian on a Raspberry Pi, you'll need to install 'libffi' before you can install the Pusher library.
+**This extension requires the Pusher library for Python.** The installation guide of the Pusher library can be found on [the official GitHub repository](https://github.com/pusher/pusher-http-python#installation). If you're running WeeWX on Raspbian on a Raspberry Pi, you'll need to install 'python-dev' and 'libffi-dev' before you can install the Pusher library.
 
 ```shell
-apt-get install libffi-dev
+apt-get install python-dev libffi-dev
 ```
 
 ## Installation
