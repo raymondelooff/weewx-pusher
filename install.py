@@ -6,7 +6,7 @@
 # Copyright (c) 2016 Raymon de Looff <raydelooff@gmail.com>
 # This extension is open-source licensed under the MIT license.
 
-__version__ = '1.0.0'
+__version__ = '1.1.0'
 
 from setup import ExtensionInstaller
 
