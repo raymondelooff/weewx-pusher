@@ -7,7 +7,7 @@ Vagrant.configure("2") do |config|
 
 	# Share extension
 	config.vm.synced_folder ".", "/home/vagrant/extension"
-	#config.vm.synced_folder "./bin/user/pusher", "/home/weewx/bin/user/pusher"
+	config.vm.synced_folder "./bin/user/pusher", "/home/weewx/bin/user/pusher"
 
 	# Provision machine
 	config.vm.provision "file", source: "./.provision/weewx.conf", destination: "/home/vagrant/weewx.conf"
