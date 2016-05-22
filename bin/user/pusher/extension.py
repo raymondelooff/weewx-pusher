@@ -52,7 +52,7 @@ class StdPusher(StdRESTful):
         self.bind(weewx.NEW_LOOP_PACKET, self.new_loop_packet)
 
         syslog.syslog(syslog.LOG_INFO,
-                  "Pusher: LOOP packets will be pushed to channel %s." % _pusher_dict['channel'])
+                  "Pusher: LOOP packets will be pushed to channel '%s'." % _pusher_dict['channel'])
 
     def new_loop_packet(self, event):
         self.loop_queue.put(event.packet)
@@ -73,13 +73,15 @@ class PusherThread(RESTThread):
     DEFAULT_TIMEOUT = 60
     DEFAULT_MAX_TRIES = 3
     DEFAULT_RETRY_WAIT = 5
-    DEFAULT_OBSERVATION_TYPES = ['barometer',
+    DEFAULT_OBSERVATION_TYPES = ['dateTime',
+                                 'barometer',
                                  'inTemp',
                                  'outTemp',
                                  'inHumidity',
                                  'outHumidity',
                                  'windSpeed',
                                  'windDir',
+                                 'rain',
                                  'dayRain'];
 
     def __init__(self, queue,
@@ -156,12 +158,12 @@ class PusherThread(RESTThread):
             except pusher.errors.PusherBadRequest, e:
                 syslog.syslog(
                         syslog.LOG_DEBUG,
-                        "Pusher: Attempt %d to push to channel %s. Error: %s"
+                        "Pusher: Attempt %d to push to channel '%s'. Error: %s"
                         % (_count + 1, self.channel, e))
 
         # If we get here, the loop terminated normally, meaning we failed
         # all tries
-        raise weewx.restx.FailedPost("Tried %d times to post to channel %s." %
+        raise weewx.restx.FailedPost("Tried %d times to post to channel '%s'." %
                          (self.max_tries, self.channel))
 
 
