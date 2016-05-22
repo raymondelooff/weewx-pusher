@@ -1,4 +1,4 @@
 .vagrant/
-vagrant/
+.provision/
 Vagrantfile
 *.pyc
