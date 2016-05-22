@@ -82,7 +82,7 @@ class PusherThread(RESTThread):
                                  'windSpeed',
                                  'windDir',
                                  'rain',
-                                 'dayRain'];
+                                 'rainRate'];
 
     def __init__(self, queue,
                  manager_dict,
@@ -133,18 +133,30 @@ class PusherThread(RESTThread):
         self.pusher = Pusher(app_id=app_id, key=key, secret=secret, cluster=cluster)
         self.channel = channel;
         self.event = event;
+        self.observation_types = observation_types;
 
     def process_record(self, record, dbmanager):
         """Specialized version of process_record that pushes a message to Pusher."""
 
-        # Get the full record by querying the database ...
-        full_record = self.get_record(record, dbmanager)
+        # Convert the record to a dictionary
+        _datadict = dict(record)
+
+        # Check if there are any observations wanted that are not in the record
+        for _observation in self.observation_types:
+            if _observation not in _datadict:
+                # Get the full record by querying the database ...
+                record = self.get_record(record, dbmanager)
+                syslog.syslog(syslog.LOG_DEBUG,
+                              "Pusher: Observation '%s' not found in record. Filling record from database."
+                              % _observation)
+                break
+
         # ... convert to Metric if necessary ...
-        metric_record = weewx.units.to_METRICWX(full_record)
+        metric_record = weewx.units.to_METRICWX(record)
 
         # Instead of sending every observation type, send only those in
         # the list obs_types
-        abridged = dict((x, metric_record.get(x)) for x in self.DEFAULT_OBSERVATION_TYPES)
+        abridged = dict((x, metric_record.get(x)) for x in self.observation_types)
 
         packet = {}
         for k in abridged:
