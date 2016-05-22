@@ -46,6 +46,11 @@ This extension can be installed very easily using the WeeWX installer.
             # The post interval of the weather data that is being pushed to
             # Pusher, in seconds. The default post interval is 5 seconds.
             post_interval = 5
+
+            # You can customize the observations that are being sent
+            # to Pusher. For example you can add 'dayRain' to the
+            # observations to push the daily rain summary.
+            # observation_types = dateTime, barometer, inTemp, outTemp, inHumidity, outHumidity, windSpeed, windDir, rain, rainRate
 	```
 4. Restart WeeWX. WeeWX should then push your weather data to Pusher. You should be able to see the weather data in the [Pusher debug console](https://pusher.com/docs/debugging).
 
