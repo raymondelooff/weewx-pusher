@@ -63,4 +63,4 @@ If you have any issues with the extension, please let me know via the GitHub [is
 
 ## License & Copyright
 Copyright (c) 2016 Raymon de Looff <raydelooff@gmail.com>.
-This extension is open-source software licensed under the MIT license.
+This extension is open-source software licensed under the GPLv3 license.
