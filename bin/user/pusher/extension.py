@@ -15,7 +15,7 @@ import weewx.restx
 import pusher
 
 from pusher import Pusher
-from pusher.errors import PusherBadRequest
+from pusher.errors import PusherError
 from weewx.restx import StdRESTful, RESTThread
 
 class StdPusher(StdRESTful):
@@ -171,7 +171,7 @@ class PusherThread(RESTThread):
             try:
                 self.pusher.trigger(self.channel, self.event, packet)
                 return
-            except pusher.errors.PusherBadRequest, e:
+            except pusher.errors.PusherError, e:
                 syslog.syslog(
                         syslog.LOG_DEBUG,
                         "pusher: Attempt %d to push to channel '%s'. Error: %s"
