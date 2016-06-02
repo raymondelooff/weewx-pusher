@@ -55,7 +55,7 @@ This extension can be installed very easily using the WeeWX installer.
 4. Restart WeeWX. WeeWX should then push your weather data to Pusher. You should be able to see the weather data in the [Pusher debug console](https://pusher.com/docs/debugging).
 
     ```shell
-    sudo /etc/init.d/weewxd restart
+    /etc/init.d/weewx restart
     ```
 
 ## Issues
