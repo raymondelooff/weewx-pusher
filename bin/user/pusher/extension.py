@@ -9,6 +9,7 @@ __version__ = '1.1.0'
 import Queue
 import sys
 import syslog
+import time
 
 import weewx
 import weewx.restx
@@ -45,7 +46,7 @@ class StdPusher(StdRESTful):
                                            **_pusher_dict)
         except ValueError, e:
             syslog.syslog(syslog.LOG_ERR,
-                          "restx: pusher: Invalid values set in configuration.")
+                          "pusher: Invalid values set in configuration.")
             syslog.syslog(syslog.LOG_ERR,
                               "*****   Error: %s" % e)
             return
@@ -54,9 +55,9 @@ class StdPusher(StdRESTful):
         self.bind(weewx.NEW_LOOP_PACKET, self.new_loop_packet)
 
         syslog.syslog(syslog.LOG_INFO,
-                  "restx: pusher: Starting Pusher version %s." % __version__)
+                  "pusher: Starting Pusher version %s." % __version__)
         syslog.syslog(syslog.LOG_INFO,
-                  "restx: pusher: LOOP packets will be pushed to channel '%s'." % _pusher_dict['channel'])
+                  "pusher: LOOP packets will be pushed to channel '%s'." % _pusher_dict['channel'])
 
     def new_loop_packet(self, event):
         self.loop_queue.put(event.packet)
@@ -151,7 +152,7 @@ class PusherThread(RESTThread):
                 # Get the full record by querying the database ...
                 record = self.get_record(record, dbmanager)
                 syslog.syslog(syslog.LOG_DEBUG,
-                              "restx: pusher: Observation '%s' not found in record. Filling record from database."
+                              "pusher: Observation '%s' not found in record. Filling record from database."
                               % _observation)
                 break
 
@@ -175,7 +176,10 @@ class PusherThread(RESTThread):
                 self.handle_exception(e, _count+1)
             time.sleep(self.retry_wait)
         else:
-            raise weewx.restx.FailedPost("restx: pusher: Tried %d times to post to channel '%s'." %
+            raise weewx.restx.FailedPost("Tried %d times to post to channel '%s'." %
                              (self.max_tries, self.channel))
 
-
+    def handle_exception(self, e, count):
+        syslog.syslog(syslog.LOG_DEBUG,
+                      "pusher: Failed upload attempt %d: %s" %
+                      (count, e))
