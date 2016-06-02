@@ -45,7 +45,7 @@ class StdPusher(StdRESTful):
                                            **_pusher_dict)
         except ValueError, e:
             syslog.syslog(syslog.LOG_ERR,
-                          "pusher: Invalid values set in configuration.")
+                          "restx: pusher: Invalid values set in configuration.")
             syslog.syslog(syslog.LOG_ERR,
                               "*****   Error: %s" % e)
             return
@@ -54,9 +54,9 @@ class StdPusher(StdRESTful):
         self.bind(weewx.NEW_LOOP_PACKET, self.new_loop_packet)
 
         syslog.syslog(syslog.LOG_INFO,
-                  "pusher: Starting Pusher version %s." % __version__)
+                  "restx: pusher: Starting Pusher version %s." % __version__)
         syslog.syslog(syslog.LOG_INFO,
-                  "pusher: LOOP packets will be pushed to channel '%s'." % _pusher_dict['channel'])
+                  "restx: pusher: LOOP packets will be pushed to channel '%s'." % _pusher_dict['channel'])
 
     def new_loop_packet(self, event):
         self.loop_queue.put(event.packet)
@@ -74,7 +74,7 @@ class PusherThread(RESTThread):
     DEFAULT_CHANNEL = None
     DEFAULT_EVENT = None
     DEFAULT_POST_INTERVAL = 5
-    DEFAULT_TIMEOUT = 60
+    DEFAULT_TIMEOUT = 10
     DEFAULT_MAX_TRIES = 3
     DEFAULT_RETRY_WAIT = 5
     DEFAULT_OBSERVATION_TYPES = ['dateTime',
@@ -123,7 +123,7 @@ class PusherThread(RESTThread):
         :param timeout: How long to wait for the server to respond before fail.
         """
         super(PusherThread, self).__init__(queue,
-                                           protocol_name='Pusher',
+                                           protocol_name='pusher',
                                            manager_dict=manager_dict,
                                            post_interval=post_interval,
                                            max_backlog=max_backlog,
@@ -151,7 +151,7 @@ class PusherThread(RESTThread):
                 # Get the full record by querying the database ...
                 record = self.get_record(record, dbmanager)
                 syslog.syslog(syslog.LOG_DEBUG,
-                              "pusher: Observation '%s' not found in record. Filling record from database."
+                              "restx: pusher: Observation '%s' not found in record. Filling record from database."
                               % _observation)
                 break
 
@@ -172,14 +172,10 @@ class PusherThread(RESTThread):
                 self.pusher.trigger(self.channel, self.event, packet)
                 return
             except pusher.errors.PusherError, e:
-                syslog.syslog(
-                        syslog.LOG_DEBUG,
-                        "pusher: Attempt %d to push to channel '%s'. Error: %s"
-                        % (_count + 1, self.channel, e))
-
-        # If we get here, the loop terminated normally, meaning we failed
-        # all tries
-        raise weewx.restx.FailedPost("pusher: Tried %d times to post to channel '%s'." %
-                         (self.max_tries, self.channel))
+                self.handle_exception(e, _count+1)
+            time.sleep(self.retry_wait)
+        else:
+            raise weewx.restx.FailedPost("restx: pusher: Tried %d times to post to channel '%s'." %
+                             (self.max_tries, self.channel))
 
 
