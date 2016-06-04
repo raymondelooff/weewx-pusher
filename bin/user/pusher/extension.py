@@ -6,14 +6,14 @@
 
 __version__ = '1.1.1'
 
+import pusher
 import Queue
+import requests
 import sys
 import syslog
 import time
-
 import weewx
 import weewx.restx
-import pusher
 
 from requests.exceptions import RequestException
 from pusher import Pusher
