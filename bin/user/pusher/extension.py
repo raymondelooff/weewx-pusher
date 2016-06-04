@@ -15,6 +15,7 @@ import weewx
 import weewx.restx
 import pusher
 
+from requests.exceptions import RequestException
 from pusher import Pusher
 from pusher.errors import PusherError
 from weewx.restx import StdRESTful, RESTThread
@@ -172,7 +173,7 @@ class PusherThread(RESTThread):
             try:
                 self.pusher.trigger(self.channel, self.event, packet)
                 return
-            except pusher.errors.PusherError, e:
+            except (pusher.errors.PusherError, requests.exceptions.RequestException), e:
                 self.handle_exception(e, _count+1)
             time.sleep(self.retry_wait)
         else:
