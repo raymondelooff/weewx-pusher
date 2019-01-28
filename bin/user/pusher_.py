@@ -6,7 +6,6 @@
 
 __version__ = '1.1.2'
 
-import pusher
 import Queue
 import requests
 import sys
@@ -19,6 +18,7 @@ from requests.exceptions import RequestException
 from pusher import Pusher
 from pusher.errors import PusherError
 from weewx.restx import StdRESTful, RESTThread
+
 
 class StdPusher(StdRESTful):
     """
