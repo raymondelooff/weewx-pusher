@@ -1,14 +1,14 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-# Setup for the WeeWX Pusher extension.
-# Source: https://github.com/raymondelooff/weewx-pusher
-# Copyright (c) 2016 Raymon de Looff <raydelooff@gmail.com>
+# Copyright (c) 2016-2021 Raymon de Looff <raydelooff@gmail.com>
 # This extension is open-source software licensed under the GPLv3 license.
 
 __version__ = '1.1.2'
 
+
 from setup import ExtensionInstaller
+
 
 def loader():
     """Installs the WeeWX Pusher extension."""
