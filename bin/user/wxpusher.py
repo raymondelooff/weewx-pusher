@@ -6,19 +6,26 @@
 
 __version__ = '2.0.0-dev'
 
-import pusher
-import Queue
-import requests
 import sys
-import syslog
 import time
+import syslog
+import requests
 import weewx
 import weewx.restx
 
-from requests.exceptions import RequestException
 from pusher import Pusher as PusherClient
 from pusher.errors import PusherError
 from weewx.restx import StdRESTful, RESTThread
+
+# deal with differences between python 2 and python 3
+try:
+    # Python 3
+    import queue
+except ImportError:
+    # Python 2
+    # noinspection PyUnresolvedReferences
+    import Queue as queue
+
 
 class Pusher(StdRESTful):
     """
@@ -38,9 +45,8 @@ class Pusher(StdRESTful):
         _manager_dict = weewx.manager.get_manager_dict_from_config(config_dict,
                                                                    'wx_binding')
 
-        self.loop_queue = Queue.Queue()
+        self.loop_queue = queue.Queue()
 
-        # Try making the Pusher thread based on the given configuration
         try:
             self.loop_thread = PusherThread(self.loop_queue,
                                            _manager_dict,
@@ -69,44 +75,24 @@ class PusherThread(RESTThread):
     Thread for sending WeeWX weather data to Pusher.
     """
 
-    DEFAULT_APP_ID = None
-    DEFAULT_KEY = None
-    DEFAULT_SECRET = None
-    DEFAULT_CLUSTER = None
-    DEFAULT_CHANNEL = None
-    DEFAULT_EVENT = None
-    DEFAULT_POST_INTERVAL = 5
-    DEFAULT_TIMEOUT = 10
-    DEFAULT_MAX_TRIES = 3
-    DEFAULT_RETRY_WAIT = 5
-    DEFAULT_OBSERVATION_TYPES = ['dateTime',
-                                 'barometer',
-                                 'inTemp',
-                                 'outTemp',
-                                 'inHumidity',
-                                 'outHumidity',
-                                 'windSpeed',
-                                 'windDir',
-                                 'rain',
-                                 'rainRate'];
-
-    def __init__(self, queue,
+    def __init__(self,
+                 q,
                  manager_dict,
-                 app_id=DEFAULT_APP_ID,
-                 key=DEFAULT_KEY,
-                 secret=DEFAULT_SECRET,
-                 cluster=DEFAULT_CLUSTER,
-                 channel=DEFAULT_CHANNEL,
-                 event=DEFAULT_EVENT,
-                 observation_types=DEFAULT_OBSERVATION_TYPES,
-                 post_interval=DEFAULT_POST_INTERVAL,
-                 max_backlog=sys.maxint,
+                 app_id,
+                 key,
+                 secret,
+                 cluster,
+                 channel,
+                 event,
+                 observation_types=None,
+                 post_interval=5,
+                 max_backlog=sys.maxsize,
                  stale=60,
                  log_success=False,
                  log_failure=True,
-                 timeout=DEFAULT_TIMEOUT,
-                 max_tries=DEFAULT_MAX_TRIES,
-                 retry_wait=DEFAULT_RETRY_WAIT):
+                 timeout=60,
+                 max_tries=3,
+                 retry_wait=5):
 
         """
         Initializes an instance of PusherThread.
@@ -117,14 +103,14 @@ class PusherThread(RESTThread):
         :param channel: The name of the channel to push the weather data to.
         :param event: The name of the event that is pushed to the channel.
         :param post_interval: The interval in seconds between posts.
-        :param max_backlog: Max length of Queue before trimming. dft=sys.maxint
+        :param max_backlog: Max length of Queue before trimming. dft=sys.maxsize
         :param stale: How old a record can be and still considered useful.
         :param log_success: Log a successful post in the system log.
         :param log_failure: Log an unsuccessful post in the system log.
         :param max_tries: How many times to try the post before giving up.
         :param timeout: How long to wait for the server to respond before fail.
         """
-        super(PusherThread, self).__init__(queue,
+        super(PusherThread, self).__init__(q,
                                            protocol_name='pusher',
                                            manager_dict=manager_dict,
                                            post_interval=post_interval,
@@ -136,10 +122,23 @@ class PusherThread(RESTThread):
                                            max_tries=max_tries,
                                            retry_wait=retry_wait)
 
-        self.pusher = PusherClient(app_id=app_id, key=key, secret=secret, cluster=cluster)
-        self.channel = channel;
-        self.event = event;
-        self.observation_types = observation_types;
+        self.pusher = PusherClient(app_id, key, secret, cluster=cluster)
+        self.channel = channel
+        self.event = event
+
+        if observation_types:
+            self.observation_types = observation_types
+        else:
+            self.observation_types = ['dateTime',
+                                      'barometer',
+                                      'inTemp',
+                                      'outTemp',
+                                      'inHumidity',
+                                      'outHumidity',
+                                      'windSpeed',
+                                      'windDir',
+                                      'rain',
+                                      'rainRate']
 
     def process_record(self, record, dbmanager):
         """Specialized version of process_record that pushes a message to Pusher."""
@@ -173,7 +172,7 @@ class PusherThread(RESTThread):
             try:
                 self.pusher.trigger(self.channel, self.event, packet)
                 return
-            except (pusher.errors.PusherError, requests.exceptions.RequestException) as e:
+            except (PusherError, requests.exceptions.RequestException) as e:
                 self.handle_exception(e, _count+1)
             time.sleep(self.retry_wait)
         else:
