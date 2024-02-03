@@ -4,7 +4,7 @@
 # Copyright (c) 2016-2021 Raymon de Looff <raydelooff@gmail.com>
 # This extension is open-source software licensed under the GPLv3 license.
 
-__version__ = '1.1.2'
+__version__ = '2.0.0-dev'
 
 
 from setup import ExtensionInstaller
@@ -25,7 +25,7 @@ class PusherInstaller(ExtensionInstaller):
             description='Send realtime weather data to Pusher.',
             author='Raymon de Looff',
             author_email='raydelooff@gmail.com',
-            restful_services='user.pusher.extension.StdPusher',
+            restful_services='user.pusher.Pusher',
             config={
                 'StdRESTful': {
                     'Pusher': {
@@ -40,6 +40,5 @@ class PusherInstaller(ExtensionInstaller):
                     }
                 }
             },
-            files=[('bin/user/pusher', ['bin/user/pusher/__init__.py',
-                                        'bin/user/pusher/extension.py'])]
+            files=[('bin/user', ['bin/user/wxpusher.py'])]
         )

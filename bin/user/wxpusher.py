@@ -4,7 +4,7 @@
 # Copyright (c) 2016 Raymon de Looff <raydelooff@gmail.com>
 # This extension is open-source software licensed under the GPLv3 license.
 
-__version__ = '1.1.2'
+__version__ = '2.0.0-dev'
 
 import pusher
 import Queue
@@ -16,17 +16,17 @@ import weewx
 import weewx.restx
 
 from requests.exceptions import RequestException
-from pusher import Pusher
+from pusher import Pusher as PusherClient
 from pusher.errors import PusherError
 from weewx.restx import StdRESTful, RESTThread
 
-class StdPusher(StdRESTful):
+class Pusher(StdRESTful):
     """
     Sends WeeWX weather records to Pusher using the Pusher library.
     """
 
     def __init__(self, engine, config_dict):
-        super(StdPusher, self).__init__(engine, config_dict)
+        super(Pusher, self).__init__(engine, config_dict)
 
         # This extension needs an App ID, key, secret, channel and event name
         _pusher_dict = weewx.restx.check_enable(
@@ -45,7 +45,7 @@ class StdPusher(StdRESTful):
             self.loop_thread = PusherThread(self.loop_queue,
                                            _manager_dict,
                                            **_pusher_dict)
-        except ValueError, e:
+        except ValueError as e:
             syslog.syslog(syslog.LOG_ERR,
                           "pusher: Invalid values set in configuration.")
             syslog.syslog(syslog.LOG_ERR,
@@ -136,7 +136,7 @@ class PusherThread(RESTThread):
                                            max_tries=max_tries,
                                            retry_wait=retry_wait)
 
-        self.pusher = Pusher(app_id=app_id, key=key, secret=secret, cluster=cluster)
+        self.pusher = PusherClient(app_id=app_id, key=key, secret=secret, cluster=cluster)
         self.channel = channel;
         self.event = event;
         self.observation_types = observation_types;
@@ -173,7 +173,7 @@ class PusherThread(RESTThread):
             try:
                 self.pusher.trigger(self.channel, self.event, packet)
                 return
-            except (pusher.errors.PusherError, requests.exceptions.RequestException), e:
+            except (pusher.errors.PusherError, requests.exceptions.RequestException) as e:
                 self.handle_exception(e, _count+1)
             time.sleep(self.retry_wait)
         else:
