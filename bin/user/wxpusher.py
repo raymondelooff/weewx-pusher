@@ -7,15 +7,13 @@
 __version__ = '2.0.0-dev'
 
 import sys
-import time
-import syslog
-import requests
 import weewx
 import weewx.restx
 
+from requests.exceptions import RequestException
 from pusher import Pusher as PusherClient
-from pusher.errors import PusherError
-from weewx.restx import StdRESTful, RESTThread
+from pusher.errors import PusherBadAuth, PusherError
+from weewx.restx import BadLogin, FailedPost, SendError, StdRESTful, RESTThread
 
 # deal with differences between python 2 and python 3
 try:
@@ -25,6 +23,37 @@ except ImportError:
     # Python 2
     # noinspection PyUnresolvedReferences
     import Queue as queue
+
+try:
+    # Test for new-style weewx logging by trying to import weeutil.logger
+    import weeutil.logger
+    import logging
+    log = logging.getLogger(__name__)
+
+    def logdbg(msg):
+        log.debug(msg)
+
+    def loginf(msg):
+        log.info(msg)
+
+    def logerr(msg):
+        log.error(msg)
+
+except ImportError:
+    # Old-style weewx logging
+    import syslog
+
+    def logmsg(level, msg):
+        syslog.syslog(level, 'pusher: %s' % msg)
+
+    def logdbg(msg):
+        logmsg(syslog.LOG_DEBUG, msg)
+
+    def loginf(msg):
+        logmsg(syslog.LOG_INFO, msg)
+
+    def logerr(msg):
+        logmsg(syslog.LOG_ERR, msg)
 
 
 class Pusher(StdRESTful):
@@ -46,25 +75,13 @@ class Pusher(StdRESTful):
                                                                    'wx_binding')
 
         self.loop_queue = queue.Queue()
-
-        try:
-            self.loop_thread = PusherThread(self.loop_queue,
-                                           _manager_dict,
-                                           **_pusher_dict)
-        except ValueError as e:
-            syslog.syslog(syslog.LOG_ERR,
-                          "pusher: Invalid values set in configuration.")
-            syslog.syslog(syslog.LOG_ERR,
-                              "*****   Error: %s" % e)
-            return
+        self.loop_thread = PusherThread(self.loop_queue,
+                                        _manager_dict,
+                                        **_pusher_dict)
 
         self.loop_thread.start()
         self.bind(weewx.NEW_LOOP_PACKET, self.new_loop_packet)
-
-        syslog.syslog(syslog.LOG_INFO,
-                  "pusher: Starting Pusher version %s." % __version__)
-        syslog.syslog(syslog.LOG_INFO,
-                  "pusher: LOOP packets will be pushed to channel '%s'." % _pusher_dict['channel'])
+        log.info("pusher: LOOP packets will be pushed to channel '%s'.", _pusher_dict['channel'])
 
     def new_loop_packet(self, event):
         self.loop_queue.put(event.packet)
@@ -125,61 +142,29 @@ class PusherThread(RESTThread):
         self.pusher = PusherClient(app_id, key, secret, cluster=cluster)
         self.channel = channel
         self.event = event
-
-        if observation_types:
-            self.observation_types = observation_types
-        else:
-            self.observation_types = ['dateTime',
-                                      'barometer',
-                                      'inTemp',
-                                      'outTemp',
-                                      'inHumidity',
-                                      'outHumidity',
-                                      'windSpeed',
-                                      'windDir',
-                                      'rain',
-                                      'rainRate']
+        self.observation_types = observation_types or [
+            'dateTime',
+            'barometer',
+            'inTemp',
+            'windSpeed',
+            'windDir',
+            'rain',
+            'rainRate'
+        ]
 
     def process_record(self, record, dbmanager):
-        """Specialized version of process_record that pushes a message to Pusher."""
+        """Specialized version of process_record that sends a record to Pusher."""
 
-        # Convert the record to a dictionary
-        _datadict = dict(record)
+        if dbmanager is not None:
+            record = self.get_record(record, dbmanager)
 
-        # Check if there are any observations wanted that are not in the record
-        for _observation in self.observation_types:
-            if _observation not in _datadict:
-                # Get the full record by querying the database ...
-                record = self.get_record(record, dbmanager)
-                syslog.syslog(syslog.LOG_DEBUG,
-                              "pusher: Observation '%s' not found in record. Filling record from database."
-                              % _observation)
-                break
+        data = dict((x, record.get(x)) for x in self.observation_types)
 
-        # ... convert to Metric if necessary ...
-        metric_record = weewx.units.to_METRICWX(record)
-
-        # Instead of sending every observation type, send only those in
-        # the list obs_types
-        abridged = dict((x, metric_record.get(x)) for x in self.observation_types)
-
-        packet = {}
-        for k in abridged:
-            packet[k] = abridged[k]
-
-        # Try pushing the packet to Pusher up to max_tries times:
-        for _count in range(self.max_tries):
-            try:
-                self.pusher.trigger(self.channel, self.event, packet)
-                return
-            except (PusherError, requests.exceptions.RequestException) as e:
-                self.handle_exception(e, _count+1)
-            time.sleep(self.retry_wait)
-        else:
-            raise weewx.restx.FailedPost("Tried %d times to post to channel '%s'." %
-                             (self.max_tries, self.channel))
-
-    def handle_exception(self, e, count):
-        syslog.syslog(syslog.LOG_DEBUG,
-                      "pusher: Failed upload attempt %d: %s" %
-                      (count, e))
+        try:
+            self.pusher.trigger(self.channel, self.event, data)
+        except PusherBadAuth as e:
+            raise BadLogin(e)
+        except PusherError as e:
+            raise FailedPost(e)
+        except RequestException as e:
+            raise SendError(e)
