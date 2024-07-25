@@ -25,7 +25,7 @@ class PusherInstaller(ExtensionInstaller):
             description='Send realtime weather data to Pusher.',
             author='Raymon de Looff',
             author_email='raydelooff@gmail.com',
-            restful_services='user.pusher.Pusher',
+            restful_services='user.wxpusher.Pusher',
             config={
                 'StdRESTful': {
                     'Pusher': {
