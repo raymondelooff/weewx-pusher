@@ -161,8 +161,8 @@ class PusherThread(RESTThread):
         try:
             self.pusher.trigger(self.channel, self.event, data)
         except PusherBadAuth as e:
-            raise BadLogin(e) from e
+            raise BadLogin(e)
         except PusherError as e:
-            raise FailedPost(e) from e
+            raise FailedPost(e)
         except RequestException as e:
-            raise SendError(e) from e
+            raise SendError(e)
