@@ -10,7 +10,7 @@ This extension can be installed very easily using the WeeWX installer.
 1. Go to [the releases section](https://github.com/raymondelooff/weewx-pusher/releases) and check the version number of the latest release. Download the latest release from the releases section, or use the following command. Change the version number to the version you want to download:
 
     ```shell
-    wget https://github.com/raymondelooff/weewx-pusher/archive/v1.x.x.tar.gz
+    wget https://github.com/raymondelooff/weewx-pusher/archive/refs/tags/v2.x.x.tar.gz
     ```
 2. Install the extension with the WeeWX's extension installer:
 
